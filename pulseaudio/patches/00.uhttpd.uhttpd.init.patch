@@ -1,0 +1,31 @@
+Index: package/uhttpd/files/uhttpd.init
+===================================================================
+--- package/uhttpd/files/uhttpd.init	(revision 28854)
++++ package/uhttpd/files/uhttpd.init	(working copy)
+@@ -15,8 +15,15 @@
+ 	local opt="$3"
+ 	local def="$4"
+ 	local val
+-
++	
+ 	config_get val "$cfg" "$var"
++	if [ "$var" == "home" ]; then
++		if [ -d /mnt/nfs/www ]; then
++		val=/mnt/nfs/www
++		fi
++	
++	fi
++	
+ 	[ -n "$val" -o -n "$def" ] && append UHTTPD_ARGS "$opt ${val:-$def}"
+ }
+ 
+@@ -119,6 +126,9 @@
+ }
+ 
+ start() {
++	[ ! -d /tmp/www ] && {
++		mkdir /tmp/www
++	}
+ 	config_load uhttpd
+ 	config_foreach start_instance uhttpd
+ }

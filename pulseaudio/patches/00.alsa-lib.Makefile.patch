@@ -1,0 +1,17 @@
+Index: feeds/packages/libs/alsa-lib/Makefile
+===================================================================
+--- feeds/packages/libs/alsa-lib/Makefile	(revision 28602)
++++ feeds/packages/libs/alsa-lib/Makefile	(working copy)
+@@ -87,8 +87,11 @@
+ 		$(PKG_INSTALL_DIR)/usr/share/alsa/pcm/* \
+ 		$(1)/usr/share/alsa/pcm/
+ 	$(CP) \
+-		$(PKG_INSTALL_DIR)/usr/share/alsa/cards/* \
++		$(PKG_INSTALL_DIR)/usr/share/alsa/cards/USB-Audio.conf \
+ 		$(1)/usr/share/alsa/cards/
++	$(CP) \
++                $(PKG_INSTALL_DIR)/usr/share/alsa/cards/aliases.conf \
++                $(1)/usr/share/alsa/cards/
+ endef
+ 
+ $(eval $(call BuildPackage,alsa-lib))

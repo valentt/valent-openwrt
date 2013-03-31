@@ -1,0 +1,84 @@
+Index: package/iproute2/patches/300-mini-patch
+===================================================================
+--- package/iproute2/patches/300-mini-patch	(revision 0)
++++ package/iproute2/patches/300-mini-patch	(revision 0)
+@@ -0,0 +1,79 @@
++--- a/ip/Makefile	2011-12-19 23:01:19.000000000 +0000
+++++ b/ip/Makefile	2011-12-19 23:02:14.000000000 +0000
++@@ -1,15 +1,10 @@
++-IPOBJ=ip.o ipaddress.o ipaddrlabel.o iproute.o iprule.o \
++-    rtm_map.o iptunnel.o ip6tunnel.o tunnel.o ipneigh.o ipntable.o iplink.o \
++-    ipmaddr.o ipmonitor.o ipmroute.o ipprefix.o iptuntap.o \
++-    ipxfrm.o xfrm_state.o xfrm_policy.o xfrm_monitor.o \
++-    iplink_vlan.o link_veth.o link_gre.o iplink_can.o \
++-    iplink_macvlan.o iplink_macvtap.o
+++IPOBJ=ip.o iproute.o iprule.o rtm_map.o
++ 
++ RTMONOBJ=rtmon.o
++ 
++ ALLOBJ=$(IPOBJ) $(RTMONOBJ)
++ SCRIPTS=ifcfg rtpr routel routef
++-TARGETS=ip rtmon
+++TARGETS=ip
++ 
++ all: $(TARGETS) $(SCRIPTS) $(LIBS)
++ 
++@@ -19,7 +14,6 @@
++ 
++ install: all
++ 	install -m 0755 $(TARGETS) $(DESTDIR)$(SBINDIR)
++-	install -m 0755 $(SCRIPTS) $(DESTDIR)$(SBINDIR)
++ 
++ clean:
++ 	rm -f $(ALLOBJ) $(TARGETS)
++--- a/ip/ip.c	2011-12-19 22:59:58.000000000 +0000
+++++ b/ip/ip.c	2011-12-19 23:00:02.000000000 +0000
++@@ -62,24 +62,8 @@
++ 	const char *cmd;
++ 	int (*func)(int argc, char **argv);
++ } cmds[] = {
++-	{ "address", 	do_ipaddr },
++-	{ "addrlabel",	do_ipaddrlabel },
++-	{ "maddress",	do_multiaddr },
++ 	{ "route",	do_iproute },
++ 	{ "rule",	do_iprule },
++-	{ "neighbor",	do_ipneigh },
++-	{ "neighbour",	do_ipneigh },
++-	{ "ntable",	do_ipntable },
++-	{ "ntbl",	do_ipntable },
++-	{ "link",	do_iplink },
++-	{ "tunnel",	do_iptunnel },
++-	{ "tunl",	do_iptunnel },
++-	{ "tuntap",	do_iptuntap },
++-	{ "tap",	do_iptuntap },
++-	{ "monitor",	do_ipmonitor },
++-	{ "xfrm",	do_xfrm },
++-	{ "mroute",	do_multiroute },
++-	{ "mrule",	do_multirule },
++ 	{ "help",	do_help },
++ 	{ 0 }
++ };
++--- a/ip/ip_common.h	2011-12-19 23:00:10.000000000 +0000
+++++ b/ip/ip_common.h	2011-12-19 23:12:09.000000000 +0000
++@@ -24,21 +24,8 @@
++ 			struct nlmsghdr *n, void *arg);
++ extern int print_rule(const struct sockaddr_nl *who,
++ 		      struct nlmsghdr *n, void *arg);
++-extern int do_ipaddr(int argc, char **argv);
++-extern int do_ipaddrlabel(int argc, char **argv);
++ extern int do_iproute(int argc, char **argv);
++ extern int do_iprule(int argc, char **argv);
++-extern int do_ipneigh(int argc, char **argv);
++-extern int do_ipntable(int argc, char **argv);
++-extern int do_iptunnel(int argc, char **argv);
++-extern int do_ip6tunnel(int argc, char **argv);
++-extern int do_iptuntap(int argc, char **argv);
++-extern int do_iplink(int argc, char **argv);
++-extern int do_ipmonitor(int argc, char **argv);
++-extern int do_multiaddr(int argc, char **argv);
++-extern int do_multiroute(int argc, char **argv);
++-extern int do_multirule(int argc, char **argv);
++-extern int do_xfrm(int argc, char **argv);
++ 
++ static inline int rtm_get_table(struct rtmsg *r, struct rtattr **tb)
++ {
