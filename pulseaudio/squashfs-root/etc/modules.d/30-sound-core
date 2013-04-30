@@ -1,0 +1,8 @@
+soundcore
+snd
+snd-page-alloc
+snd-hwdep
+snd-seq-device
+snd-rawmidi
+snd-timer
+snd-pcm

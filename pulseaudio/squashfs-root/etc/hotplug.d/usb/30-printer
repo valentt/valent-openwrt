@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# Copyright (C) 2009 OpenWrt.org
+
+vendor=$(echo $PRODUCT | awk -F'/' '{print "000" $1}' | awk '{ print substr( $0, length($0) - 3, length($0) ) }' )
+prodid=$(echo $PRODUCT | awk -F'/' '{print "000"$2}' | awk '{ print substr( $0, length($0) - 3, length($0) ) }' )
+
+lp_dev="Vendor=$vendor ProdID=$prodid"
+lp_dev_exist=$(grep $lp_dev /proc/bus/usb/devices 2>/dev/null)
+if [ "$lp_dev" != "" ]; then
+IF=$(grep "$lp_dev" -A5 /proc/bus/usb/devices | tail -n 1  | grep "usblp" | awk '{print $3}')
+  if  [ "$IF" != "" ]; then
+  DEVICENAME=usblp$IF
+  fi
+fi
+case "$ACTION" in
+	add)
+		case $DEVICENAME in
+		usblp*)
+		/etc/init.d/p910nd stop
+		sleep 1
+		/etc/init.d/p910nd start
+		;;
+		esac
+		;;
+	remove)
+		;;
+esac	
+		

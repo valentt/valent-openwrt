@@ -1,0 +1,85 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org 
+
+START=999
+STOP=50
+start() {
+	[ ! -d /mnt/nfs ] && {
+	mkdir -p /mnt/nfs
+	}
+	/bin/mount -t nfs -o nolock 192.168.0.6:/media/openwrt /mnt/nfs
+	RETVAL=$?
+	[ "$RETVAL" == 0 ] && {
+		[ -d /mnt/nfs/etc/config ] && {
+			cd /mnt/nfs/etc/config
+			for file in * ; do
+				[ -f /mnt/nfs/etc/config/$file ] && {
+					[ ! -f /etc/config/$file ] && {
+						ln -s /mnt/nfs/etc/config/$file /etc/config/$file
+					}
+				}	
+			done
+		}	
+		
+		[ -d /mnt/nfs/usr/share ] && {
+			cd /mnt/nfs/usr/share
+			for folder in * ; do
+				[ -d /mnt/nfs/usr/share/$folder ] && {
+					[ ! -d /usr/share/$folder ] && {
+						ln -s /mnt/nfs/usr/share/$folder /usr/share/$folder
+					}
+				}
+			done
+		}
+		
+		[ -d /mnt/nfs/usr/lib ] && {
+                        cd /mnt/nfs/usr/lib
+                        for folder in * ; do
+                                [ -d /mnt/nfs/usr/lib/$folder ] && {
+                                        [ ! -d /usr/lib/$folder ] && {
+                                                ln -s /mnt/nfs/usr/lib/$folder /usr/lib/$folder
+                                        }
+                                }
+			done
+                }
+		
+		[ -f /mnt/nfs/usr/bin/webifmetabin ] && {
+			for applet in  `/mnt/nfs/usr/bin/webifmetabin | grep -v ERROR | grep -v Applets` ; do
+				[ ! -f /usr/bin/$applet ] && {
+					ln -s /mnt/nfs/usr/bin/webifmetabin /usr/bin/$applet
+				}	
+			done
+		}
+
+		[ ! -d /overlay/www ] && {
+			rm -rf /www
+			ln -s /tmp/www /www
+		}
+	
+		[ -d /tmp/www ] && {
+			rm -rf /tmp/www
+		}
+
+		[ -d /mnt/nfs/www ] && {
+			ln -s /mnt/nfs/www /tmp/www
+		}
+		
+	}
+	
+	
+	[ -d /tmp/www ] && {
+		rm -rf /tmp/www
+	}
+		
+	[ -d /mnt/nfs/www ] && {
+		ln -s /mnt/nfs/www /tmp/www
+	}
+}
+
+stop() {
+
+ps | grep /mnt/nfs | grep -v grep | awk '{print $1}' | xargs kill -9 
+
+umount /mnt/nfs
+
+}

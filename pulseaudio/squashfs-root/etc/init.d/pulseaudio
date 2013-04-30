@@ -1,0 +1,26 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2011 OpenWrt.org
+START=65
+
+start() {
+	export HOME=/tmp
+	mkdir -p /tmp/lib/pulse
+	/usr/bin/pulseaudio --daemonize --system --disallow-exit --realtime --disable-shm --exit-idle-time=-1 -v
+	for card in /proc/asound/card*; do
+	    device_name=$(echo $card | cut -f4 -d"/")
+	    if [ -e "$card" ] && [ "$device_name" != "cards" ]; then
+	      /usr/bin/env -i ACTION=add DEVICENAME="$device_name" /sbin/hotplug-call sound
+	    fi
+	done
+	for input in /dev/input/event*; do
+	    input_id=$(echo $input | cut -f4 -d"/" | sed -e "s/event//")
+	    VOL_RESULT=$(input-kbd $input_id 2> /dev/null | grep KEY_VOL)
+	    if [ -e "$input" ] && [ "$VOL_RESULT" != "" ]; then
+	      /usr/bin/env -i ACTION=add DEVICENAME="event$input_id" /sbin/hotplug-call input
+	    fi
+	done
+}
+
+stop() {
+	killall pulseaudio
+}

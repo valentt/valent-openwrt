@@ -1,0 +1,8 @@
+
+config 'system'
+	option 'address' '172.16.10.1'
+	option 'release' 'pulseaudio'
+	option 'mode' '1'
+	option 'version' '28854-1229'
+	option 'multiwan' '1'
+

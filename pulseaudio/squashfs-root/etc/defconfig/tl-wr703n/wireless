@@ -1,0 +1,25 @@
+
+config 'wifi-device' 'radio0'
+	option 'type' 'mac80211'
+	option 'channel' 'auto'
+	option 'macaddr' 'MAC_ADDR'
+	option 'hwmode' '11ng'
+
+config 'wifi-iface'
+	option 'device' 'radio0'
+	option 'network' 'lan'
+	option 'mode' 'ap'
+	option 'ssid' 'OpenWrt-PulseAudio'
+	option 'encryption' 'psk2'
+	option 'key' 'UEC7wzdu'
+	option 'wds' '1'
+
+config 'wifi-iface'
+	option 'device' 'radio0'
+	option 'network' 'wifi'
+	option 'mode' 'sta'
+	option 'encryption' 'psk2'
+	option 'ssid' 'Disabled'
+	option 'key' ''
+	option 'wds' '0'
+

@@ -1,0 +1,64 @@
+#!/bin/sh
+
+# Copyright (C) 2009 OpenWrt.org
+
+case "$ACTION" in
+	add)
+		export HOME=/tmp
+		
+		PID=$(pidof pulseaudio)
+		if [ "$PID" == "" ]; then
+		/etc/init.d/pulseaudio start
+		sleep 5
+		fi
+		
+		DEVICE_ID=$(echo $DEVICENAME | sed -e "s/card//")
+		
+		MIXER=$(amixer | grep "mixer control" | grep "$DEVICE_ID"$ | cut -f2 -d"'")
+		/usr/bin/amixer set $MIXER 100% unmute > /dev/null 2>&1
+		
+		ratelist=$(grep Rates /proc/asound/$DEVICENAME/stream0 | head -n 1  | cut -f2 -d ":" | sed -e "s/,//g")
+		for rate in $ratelist ; do
+		    if [ "$rate" == "44100" ]; then
+		        FFK=1
+		    fi
+		done
+		PULSE_MODULE_ID=$(pactl list short modules | grep module-alsa-sink | grep sink_name=$DEVICENAME | awk '{print $1}')
+		if [ "$PULSE_MODULE_ID" == "" ]; then
+		  if [ "$FFK" == 1 ]; then
+		    pactl load-module module-alsa-sink tsched=0 rate=44100 device=plughw:$DEVICE_ID sink_name=$DEVICENAME
+		  else
+		    pactl load-module module-alsa-sink tsched=0 rate=$rate device=plughw:$DEVICE_ID sink_name=$DEVICENAME
+		  fi
+		fi
+
+                PULSE_MODULE_ID=$(pactl list short modules | grep module-switch-on-connect | awk '{print $1}')
+                if  [ "$PULSE_MODULE_ID" != "" ]; then
+                  pactl unload-module $PULSE_MODULE_ID
+                fi
+
+		for sink in palerts pnotifications pfeedback pringtones pmedia pflash pnavigation pvoicedial pvoip pdefaultapp peffects pDTMF pcalendar palarm pvvm ; do
+                  PULSE_MODULE_ID=$(pactl list short modules | grep module-remap-sink | grep sink_name=$sink | awk '{print $1}')
+                  if  [ "$PULSE_MODULE_ID" != "" ]; then
+                    pactl unload-module $PULSE_MODULE_ID
+                  fi
+
+                  pactl load-module module-remap-sink sink_name=$sink master=$DEVICENAME channels=2 master_channel_map=front-left,front-right channel_map=front-left,front-right
+                done
+
+                pactl load-module module-switch-on-connect
+		;;
+	remove)
+		export HOME=/tmp
+		
+		PID=$(pidof pulseaudio)
+		if [ "$PID" != "" ]; then
+		    PULSE_MODULE_ID=$(pactl list short modules | grep module-alsa-sink | grep sink_name=$DEVICENAME | awk '{print $1}')
+		    if [ "$PULSE_MODULE_ID" != "" ]; then
+		        pactl unload-module $PULSE_MODULE_ID
+		    fi
+		fi
+		
+		;;
+esac	
+		

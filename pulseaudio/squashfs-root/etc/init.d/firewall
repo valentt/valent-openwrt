@@ -1,0 +1,50 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org 
+
+START=90
+start() {
+	[ -f /usr/sbin/iptables ] && {
+	
+	IPTABLES=/usr/sbin/iptables
+	$IPTABLES -F
+	$IPTABLES -F -t nat
+	$IPTABLES -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+	$IPTABLES -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+	$IPTABLES -P INPUT ACCEPT
+	$IPTABLES -P OUTPUT ACCEPT
+	$IPTABLES -P FORWARD ACCEPT
+	VPN_SERVER=$(uci get openvpn.server.server)
+	if [ "$VPN_SERVER" != "" ]; then
+	  eval "$(/bin/ipcalc.sh $VPN_SERVER)"
+	  VPN_NETWORK=$NETWORK
+	  VPN_PREFIX=$PREFIX
+	fi
+	LAN_IP=$(uci get network.lan.ipaddr)
+	LAN_NETMASK=$(uci get network.lan.netmask)
+	eval "$(/bin/ipcalc.sh $LAN_IP $LAN_NETMASK)"
+	for netif in wifi wan; do
+	  bridge_result=$(uci get network.$netif.type 2>/dev/null)
+	  interface=$(uci get network.$netif.ifname 2>/dev/null)
+	  if [ "$interface" != "" ]; then
+	    if [ "$bridge_result" != "bridge" ] ; then
+	    $IPTABLES -A POSTROUTING -t nat -o $interface -s $NETWORK/$PREFIX -j MASQUERADE
+	    if [ "$VPN_NETWORK" !=  "" ] && [ "$VPN_PREFIX" !=  "" ]; then
+	      $IPTABLES -A POSTROUTING -t nat -o $interface -s $VPN_NETWORK/$VPN_PREFIX -j MASQUERADE
+	    fi
+	    else
+	    $IPTABLES -A POSTROUTING -t nat -o br-$netif -s $NETWORK/$PREFIX -j MASQUERADE
+	    if [ "$VPN_NETWORK" !=  "" ] && [ "$VPN_PREFIX" !=  "" ]; then
+	      $IPTABLES -A POSTROUTING -t nat -o br-$netif -s $VPN_NETWORK/$VPN_PREFIX -j MASQUERADE
+	    fi
+	    fi
+	  fi
+	done
+	$IPTABLES -A POSTROUTING -t nat -o usb0 -s $NETWORK/$PREFIX -j MASQUERADE
+	if [ "$VPN_NETWORK" !=  "" ] && [ "$VPN_PREFIX" !=  "" ]; then
+	  $IPTABLES -A POSTROUTING -t nat -o usb0 -s $VPN_NETWORK/$VPN_PREFIX -j MASQUERADE
+	fi
+
+	echo 1 > /proc/sys/net/ipv4/ip_forward
+	}		
+}

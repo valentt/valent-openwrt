@@ -1,0 +1,39 @@
+#!/bin/sh
+
+# Copyright (C) 2009 OpenWrt.org
+
+case "$ACTION" in
+	add)
+		export HOME=/tmp
+		
+		PID=$(pidof pulseaudio)
+		EVENT_DEVICE=$(echo $DEVICENAME | grep ^event )
+		if [ "$EVENT_DEVICE" != "" ]; then
+		  if [ "$PID" != "" ]; then
+		    pactl load-module module-mmkbd-evdev device=/dev/input/$DEVICENAME
+		  fi
+		fi
+		;;
+	remove)
+		export HOME=/tmp
+		
+		PID=$(pidof pulseaudio)
+		EVENT_DEVICE=$(echo $DEVICENAME | grep ^event )
+		if [ "$EVENT_DEVICE" != "" ]; then
+		  if [ "$PID" != "" ]; then
+		    PULSE_MODULE_ID=$(pactl list short modules | grep module-mmkbd-evdev | grep device=/dev/input/$DEVICENAME | awk '{print $1}')
+		    if [ "$PULSE_MODULE_ID" != "" ]; then
+		      pactl unload-module $PULSE_MODULE_ID
+		    fi
+		  fi
+		fi
+		sleep 2
+		PID=$(pidof pulseaudio)
+		if [ "$PID" == "" ]; then
+		/etc/init.d/pulseaudio start
+		fi
+		
+		
+		;;
+esac	
+		

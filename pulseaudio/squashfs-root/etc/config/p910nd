@@ -1,0 +1,7 @@
+
+config 'p910nd'
+	option 'port' '0'
+	option 'bidirectional' '1'
+	option 'device' '/dev/lp0'
+	option 'enabled' '1'
+
